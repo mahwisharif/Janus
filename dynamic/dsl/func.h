@@ -8,6 +8,7 @@ using namespace std;
 /*--- Global Var Decl End ---*/
 
 /*--- Function Global Declaration Start ---*/
+void func_1();
 
 /*--- Function Global Declaration Finish ---*/
 void exit_routine();
