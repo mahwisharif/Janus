@@ -50,6 +50,8 @@ add_subdirectory(vector)
 add_subdirectory(planner)
 #JASAN - AddressSanitizer
 add_subdirectory(asan)
+#JSBOUND - Softbound-CETS
+add_subdirectory(sbcets)
 #DLL
 add_subdirectory(dll)
 endif()
