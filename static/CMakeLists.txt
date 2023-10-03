@@ -12,6 +12,7 @@ add_definitions(-D_STATIC_ANALYSIS_COMPILED)
 ## ripped from capstone project
 set(CS_ENGINE
     capstone/cs.c
+    capstone/Mapping.c
     capstone/MCInst.c
     capstone/MCInstrDesc.c
     capstone/MCRegisterInfo.c
@@ -21,6 +22,8 @@ set(CS_ENGINE
 
 set(CS_INT_INCLUDE
     capstone/cs_priv.h
+    capstone/cs_simple_types.h
+    capstone/Mapping.h
     capstone/LEB128.h
     capstone/MathExtras.h
     capstone/MCDisassembler.h
@@ -45,6 +48,15 @@ set(CS_INCLUDE
     capstone/include/capstone/systemz.h
     capstone/include/capstone/xcore.h
     capstone/include/capstone/m68k.h
+    capstone/include/capstone/evm.h
+    capstone/include/capstone/wasm.h
+    capstone/include/capstone/tms320c64x.h
+    capstone/include/capstone/m680x.h
+    capstone/include/capstone/mos65xx.h
+    capstone/include/capstone/bpf.h
+    capstone/include/capstone/riscv.h
+    capstone/include/capstone/sh.h
+    capstone/include/capstone/tricore.h
     capstone/include/capstone/platform.h
  )
 
@@ -70,6 +82,10 @@ if (JANUS_ARM_SUPPORT)
         capstone/arch/ARM/ARMMapping.h
         capstone/arch/ARM/ARMMappingInsn.inc
         capstone/arch/ARM/ARMMappingInsnOp.inc
+        capstone/arch/ARM/ARMGenRegisterName.inc
+        capstone/arch/ARM/ARMGenRegisterName_digit.inc
+        capstone/arch/ARM/ARMGenSystemRegister.inc
+        capstone/arch/ARM/ARMMappingInsnName.inc
         )
 endif ()
 
@@ -94,6 +110,12 @@ if (JANUS_ARM64_SUPPORT)
         capstone/arch/AArch64/AArch64InstPrinter.h
         capstone/arch/AArch64/AArch64Mapping.h
         capstone/arch/AArch64/AArch64MappingInsn.inc
+        capstone/arch/AArch64/AArch64GenRegisterName.inc
+        capstone/arch/AArch64/AArch64GenRegisterV.inc
+        capstone/arch/AArch64/AArch64GenSystemOperands.inc
+        capstone/arch/AArch64/AArch64GenSystemOperands_enum.inc
+        capstone/arch/AArch64/AArch64MappingInsnName.inc
+        capstone/arch/AArch64/AArch64MappingInsnOp.inc
         )
     set(JANUS_ARCH_SOURCES
         arch/aarch64/Operand.cpp
@@ -114,7 +136,8 @@ if (JANUS_X86_SUPPORT)
         capstone/arch/X86/X86IntelInstPrinter.c
         capstone/arch/X86/X86Mapping.c
         capstone/arch/X86/X86Module.c
-        capstone/arch/X86/X86ATTInstPrinter.c
+        capstone/arch/X86/X86ATTInstPrinter.c   #missing in new version?
+        capstone/arch/X86/X86InstPrinterCommon.c
         )
     set(CS_HEADERS_X86
         capstone/arch/X86/X86BaseInfo.h

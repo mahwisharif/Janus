@@ -435,7 +435,7 @@ MachineInstruction::isADD()
             opcode == X86_INS_ADDPS  ||
             opcode == X86_INS_FADD  ||
             opcode == X86_INS_FIADD  ||
-            opcode == X86_INS_FADDP  ||
+            //opcode == X86_INS_FADDP  ||
             opcode == X86_INS_PADDB  ||
             opcode == X86_INS_PADDSB  ||
             opcode == X86_INS_PADDSW  ||
@@ -639,7 +639,7 @@ MachineInstruction::isFPU87(){
     return
         (opcode == X86_INS_FABS ||
         opcode == X86_INS_FADD ||
-        opcode == X86_INS_FADDP ||
+        //opcode == X86_INS_FADDP ||
         opcode == X86_INS_FBLD ||
         opcode == X86_INS_FBSTP ||
         opcode == X86_INS_FCHS ||
