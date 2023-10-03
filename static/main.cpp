@@ -3,7 +3,7 @@
 #include <string.h>
 
 using namespace std;
-
+std::set<int> security_modes({JASAN, JASAN_LIVE, JASAN_NULL, JASAN_OPT, JASAN_SCEV, JSBCETS, JSBCETS_NULL, JSBCETS_LIVE});
 static void usage()
 {
     cout<<"Usage: analyze + <option> + <executable> + [profile_info]"<<endl;
@@ -13,6 +13,9 @@ static void usage()
     cout<<"  -asl: AddressSanitizer with Liveness Opt"<<endl;
     cout<<"  -asc: AddressSanitizer with SCEV Opt"<<endl;
     cout<<"  -asn: Address Sanitizer with NULL rule for shared object"<<endl;
+    cout<<"  -scet: generate rules for softbound + CETS"<<endl;
+    cout<<"  -sn: generate NULL rules for softbound + CETS"<<endl;
+    cout<<"  -sl: generate rules for softbound + CETS with liveness"<<endl;
     cout<<"  -c: generate custom analysis and rules from Cinnamon DSL"<<endl;
     cout<<"  -cfg: generate CFG from the binary"<<endl;
     cout<<"  -s: generate rules for secure execution"<<endl;
@@ -110,7 +113,24 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 'v': mode = JVECTOR; IF_VERBOSE(cout<<"Loop vectorisation enabled"<<endl); break;
-            case 's': mode = JSECURE; IF_VERBOSE(cout<<"Secure execution enabled"<<endl); break;
+            case 's':
+                if(argv[1][2] == 'n'){
+                    mode = JSBCETS_NULL; IF_VERBOSE(cout<<"Softbound + CETS - NULL rules"<<endl);break;
+                }
+                else if(argv[1][2] == 'l'){
+                    mode = JSBCETS_LIVE; IF_VERBOSE(cout<<"Softbound + CETS with liveness"<<endl);break;
+                }
+                else if(argv[1][2] == 'b'){
+                    mode = JSOFTBOUND; IF_VERBOSE(cout<<"Softbound- spatial safety enabled"<<endl);break;
+                }
+                else if(argv[1][2] == 'c' && argv[1][3] == 'e' && argv[1][4] == 't'){
+                    mode = JSBCETS; IF_VERBOSE(cout<<"Softbound + CETS  enabled"<<endl);break;
+                }
+                else{
+                    usage();
+                    return 1;
+                }
+                break;
             case 'o': mode = JOPT; IF_VERBOSE(cout<<"Binary optimiser mode enabled"<<endl); break;
             case 'd': mode = JDLL; IF_VERBOSE(cout<<"Testing for dll instrumentation enabled"<<endl); break;
             default: {
@@ -146,10 +166,10 @@ int main(int argc, char **argv) {
     //build CFG
     jc->buildProgramDependenceGraph();
 
-    if(mode != JASAN &&  mode != JASAN_LIVE && mode != JASAN_NULL){ //do loop analysis for JASAN only for SCEV and full opt
+    if(mode != JASAN &&  mode != JASAN_LIVE && mode != JASAN_NULL && mode != JSBCETS && mode != JSBCETS_LIVE && mode != JSBCETS_NULL){ //do loop analysis for JASAN only for SCEV and full opt
         jc->analyseLoop();
     }
-    if( mode == JASAN || mode == JASAN_OPT || mode == JASAN_LIVE || mode == JASAN_SCEV || mode == JASAN_NULL)
+    if( mode == JASAN || mode == JASAN_OPT || mode == JASAN_LIVE || mode == JASAN_SCEV || mode == JASAN_NULL || mode == JSBCETS || mode == JSBCETS_NULL || mode == JSBCETS_LIVE)
         jc->translateFunctions();
 
 

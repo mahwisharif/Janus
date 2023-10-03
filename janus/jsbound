@@ -1,0 +1,56 @@
+#!/bin/bash     
+set -x
+my_dir="$(dirname "$0")"
+
+source $my_dir/janus_header
+
+function usage {
+    echo "Janus Secure Execution with SOFTBOUND+CETS"
+    echo "Usage: "
+    echo "./jsbound <opt-option> <executable> [executable_args ...]"
+    echo "./jasan <opt-option> <executable> [executable_args ...]"
+    echo "opt-option: base, live, null"
+}
+
+if [ $# -lt "2" ]
+then 
+    usage
+    exit
+fi
+
+stat_mode=$1
+binfile=$2
+shift
+shift
+hintfile="$binfile.jrs"
+
+if [ ! -f $binfile ];
+then
+   echo "Executable $binfile does not exist in the binaries folder."
+   exit
+fi
+
+binname=$( echo "$binfile" | rev | cut -d'/' -f1 | rev )
+datadir=/local/scratch/ma843/rwdir-re
+#datadir=/local/scratch-2/ma843/rwdir-re
+asmfile="$datadir/$binname.s"
+if [ ! -f $asmfile ];
+then
+   objdump -d $binfile > $asmfile
+fi
+
+if [ $stat_mode == "live" ];
+then
+    $JANUSBIN/analyze -sl $binfile
+elif [ $stat_mode == "base" ];
+then
+    $JANUSBIN/analyze -scet $binfile
+elif [ $stat_mode == "null" ];
+then
+    $JANUSBIN/analyze -sn $binfile
+fi
+#asmfile="$datadir/$binname.s"
+#echo "$TOOLDIR/bin64/drrun -c $JANUSLIB/libjguard.so @$hintfile @1 @0 -- $binfile $*"
+#gdb --args $TOOLDIR/bin64/drrun -c $JANUSLIB/libjguard.so @$hintfile @1 @0 -- $binfile $@
+$TOOLDIR/bin64/drrun -c $JANUSLIB/libjsbcets.so @$hintfile @1 @0 -- $binfile $@
+#$TOOLDIR/bin64/drrun -max_bb_instrs 64 -c $JANUSLIB/libjsbcets.so @$hintfile @1 @0 -- $binfile $@
