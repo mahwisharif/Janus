@@ -80,10 +80,11 @@ static void linkRelocation(JanusContext *jc, Function *pltFunc)
 
     if (!size) return;
 
-    if (size % 3) {
+    if (size % 3) {  //TODO: this is not portable for binaries where .plt section may not be multiple of 3
         cout << "function "<<pltFunc->name<<" may not be a PLT section" << endl;
         return;
     }
+    jc->pltsection = true;
 
     uint32_t nPltSym = size / 3;
 
@@ -100,6 +101,11 @@ static void linkRelocation(JanusContext *jc, Function *pltFunc)
         //update in the function map
         jc->functionMap[synFunc->startAddress] = synFunc;
         i++;
+        //HACK: to build BB for plt stubs to be used for instrumentation
+        int offset = synFunc->startAddress - pltFunc->startAddress;
+        synFunc->contents = pltFunc->contents + offset;
+        disassemble(synFunc);
+
         if (i==nPltSym) break;
     }
 }
@@ -241,6 +247,7 @@ liftOpcode(MachineInstruction *minstr)
             case X86_INS_SAR:
                 return Instruction::AShr;
             //and
+            case X86_INS_PAND:
             case X86_INS_AND:
             case X86_INS_ANDPD:
             case X86_INS_ANDPS:
@@ -446,7 +453,10 @@ static void liftInstruction(Instruction &instr, Function *function)
     }
 
     else if (minstr->opcode == X86_INS_MOVDQU ||
-             minstr->opcode == X86_INS_MOVDQA) {
+            minstr->opcode == X86_INS_MOVDQA ||
+              minstr->opcode == X86_INS_MOVUPS ||
+              minstr->opcode == X86_INS_MOVUPD ||
+              minstr->opcode == X86_INS_MOVLPS) {
         Variable var = minstr->operands[0].lift(instr.pc + instr.minstr->pc);
         minstr->operands[0].access = OPND_WRITE;
         minstr->operands[1].access = OPND_READ;
@@ -511,7 +521,10 @@ void getInstructionInputs(janus::MachineInstruction *minstr, vector<Variable> &v
         v.push_back(var);
     }
     else if (minstr->opcode == X86_INS_MOVDQU ||
-             minstr->opcode == X86_INS_MOVDQA) {
+             minstr->opcode == X86_INS_MOVDQA ||
+              minstr->opcode == X86_INS_MOVUPS ||
+              minstr->opcode == X86_INS_MOVUPD ||
+              minstr->opcode == X86_INS_MOVLPS) {
         Variable var = minstr->operands[1].lift(minstr->pc + minstr->size);
         v.push_back(var);
     }
