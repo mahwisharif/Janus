@@ -465,6 +465,11 @@ livenessAnalysis(Function *function)
             if(instr.opcode == Instruction::Call){ //this is because we dont always get a correst set from guessCallArguments
                 instr.regReads.merge(paramSet);
             }
+            else if(instr.opcode == Instruction::Interupt && instr.minstr->opcode == X86_INS_SYSCALL){
+                instr.regReads.merge(paramSet);
+                instr.regReads.merge(JREG_R10);
+                instr.regReads.merge(JREG_RAX); //syscall number
+            }
             //skip invisible reads within the same block
             regUses[b].merge(instr.regReads - regDefs[b]);
             regDefs[b].merge(instr.regWrites);
