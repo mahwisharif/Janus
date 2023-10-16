@@ -388,22 +388,30 @@ variableAnalysis(janus::Function *function)
         for (auto vi: instr.inputs) {
             if (vi->type == JVAR_REGISTER){
                 instr.regReads.insert(vi->value);
+                function->readSet.insert(vi->value);
             }
             else if (vi->type == JVAR_MEMORY || vi->type == JVAR_POLYNOMIAL) {
                 for (auto vm : vi->pred)
-                    if (vm->type == JVAR_REGISTER)
+                    if (vm->type == JVAR_REGISTER){
                         instr.regReads.insert(vm->value);
+                        function->readSet.insert(vm->value);
+                    }
             }
         }
         for (auto vo: instr.outputs) {
             if (vo->type == JVAR_REGISTER){
-                if(vo->value > vo->reg) // if it is smaller than full version. only then kill it
+                function->writeSet.insert(vo->value);
+                if(vo->value >= vo->reg){ // if it is smaller than full version. only then kill it
+                    //TODO: check if we need equality here i.e. vo->value >= vo->reg
                     instr.regWrites.insert(vo->value);
+                }
             }
             else if (vo->type == JVAR_MEMORY || vo->type == JVAR_POLYNOMIAL) {
                 for (auto vm : vo->pred)
-                    if (vm->type == JVAR_REGISTER)
+                    if (vm->type == JVAR_REGISTER){
                         instr.regReads.insert(vm->value);
+                        function->readSet.insert(vm->value);
+                    }
             }
         }
     }

@@ -345,3 +345,7 @@ Function::needSync()
     }
     return false;
 }
+bool
+Function::isLeaf(){
+     return (subCalls.size() == 0  && jumpCalls.size() == 0 );
+}

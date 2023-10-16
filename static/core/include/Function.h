@@ -129,6 +129,8 @@ namespace janus {
         /* Scratch Register info */
         ScratchSet                             stmRegs;
         RegSet                                 spillRegs;
+        RegSet                                 readSet;
+        RegSet                                 writeSet;
         /* --------------------------------------------------------------
          *   liveness information (Only available after calling livenessAnalysis)
          * ------------------------------------------------------------- */
@@ -154,9 +156,12 @@ namespace janus {
         uint32_t                               traverseStartStep;
         uint32_t                               traverseEndStep;
 
+
+
         Function(JanusContext *gc, FuncID fid, const Symbol &symbol, uint32_t size);
         ~Function();
 
+        bool isLeaf();
         //retrieve information from instructions
         void translate();
         void visualize(void *outputStream); //output to dot format

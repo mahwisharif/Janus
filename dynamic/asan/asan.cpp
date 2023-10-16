@@ -19,7 +19,7 @@
 //settings for saving arithmetic flags
 #define HYBRID_MODE 1
 #define STAT_ONLY_MODE 0
-#define DYN_ONLY_MODE 0 
+#define DYN_ONLY_MODE 0
 
 #define EFLAGS_PUSH_POP 0
 #define EFLAGS_DR_SAVE 1
@@ -69,6 +69,8 @@ std::set<string> exclude_mod = {"libc.so.6","libclang_rt.asan-x86_64.so"};
 struct reg_slots{
     uint64_t slot1; 
     uint64_t slot2;
+    uint64_t slot3;
+    uint64_t slot4;
 };
 struct reg_slots regs;
 app_pc orig_main;
@@ -146,11 +148,6 @@ event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
 static void generate_asan_events(JANUS_CONTEXT);
 static void generate_dynamic_events(JANUS_CONTEXT);
 static void generate_events_by_rule(JANUS_CONTEXT, instr_t *instr);
-bool enable_BB = true;
-bool enable_instr = false;
-void print_instr(uintptr_t current_pc){
-     printf("executed instr: %p\n", current_pc);
-}
 static void
 event_module_load(void *drcontext, const module_data_t *info, bool loaded){
     char  filepath[MAX_STR_LEN];
@@ -265,7 +262,6 @@ void enable_monitoring(app_pc main_pc){
     mc.pc = main_pc;
     dr_redirect_execution(&mc);
 }
-
 /* Main execution loop: this will be executed at every initial encounter of new basic block */
 static dr_emit_flags_t
 event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
@@ -421,7 +417,7 @@ generate_events_by_rule(JANUS_CONTEXT, instr_t *instr){
              }
         break;
         case SAVE_AT_ENTRY: 
-            if(monitor_enable){
+            if(monitor_enable && reg_live_on){
                 if(rule->reg0)//save_rdi = 1
                     PRE_INSERT(bb, trigger,
                         INSTR_CREATE_mov_st(drcontext,
@@ -435,7 +431,7 @@ generate_events_by_rule(JANUS_CONTEXT, instr_t *instr){
             }
         break;
         case RESTORE_AT_EXIT:
-            if(monitor_enable){
+            if(monitor_enable && reg_live_on){
                 if(rule->reg0)//save_rdi = 1
                     PRE_INSERT(bb, trigger,
                         INSTR_CREATE_mov_ld(drcontext, opnd_create_reg(DR_REG_RDI),

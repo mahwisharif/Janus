@@ -430,7 +430,8 @@ static void analyze_leaf_functions(JanusContext *jc){
      int save_rdi = 0; 
      int save_rsi = 0; 
      //if function has subcalls, skip
-     if(func.subCalls.size()  || func.jumpCalls.size() ) continue;
+     //if(func.subCalls.size()  || func.jumpCalls.size() ) continue;
+     if(!func.isLeaf())         continue;
      //if function has no memory instructions, skip
      bool readWriteMem = false;
      for(auto &bb : func.blocks){
@@ -470,6 +471,38 @@ static void analyze_leaf_functions(JanusContext *jc){
      }
   }
 }
+static void analyze_call_sites(JanusContext *jc){
+    int save_rdi, save_rsi;
+  for(auto &func: jc->functions){
+     if ((!func.entry && !func.instrs.size()) || func.isExternal) continue;
+     if(gcc_clang_func.count(func.name) || func.name == "_plt" || func.name == "main") continue;
+     if(func.isLeaf()) continue; //already taken care of in the analyze_leaf_function
+     //only save rdi and rsi at the entry/exit of the function, if they have memory instructions AND they are not being written to. because, if they are being written to, the caller must have saved them.
+     bool readWriteMem = false;
+     for(auto &bb : func.blocks){
+       if(bb.minstrs.size()){ //even if one memory instruction found, we proceed
+           readWriteMem = true;
+           break;
+       }
+     }
+     if(!readWriteMem) continue;    //if not memory read/write instruction, no need to save/restore
+     save_rdi = (func.writeSet.contains(JREG_RDI)) ? 0 : 1; 
+     save_rsi = (func.writeSet.contains(JREG_RSI)) ? 0 : 1;
+     if(save_rsi || save_rdi){
+         //save
+         Instruction* entry_instr = &(func.entry->instrs[0]);
+         insert_asan_rule(entry_instr, SAVE_AT_ENTRY,save_rdi, save_rsi, 0,0);
+         //restore
+         for (auto retID : func.terminations) {
+            BasicBlock &bb = func.blocks[retID];
+            Instruction *exit_instr = bb.lastInstr();
+            if (exit_instr->opcode == Instruction::Return) { //TODO: look for lonjmp as well
+                insert_asan_rule(exit_instr, RESTORE_AT_EXIT, save_rdi, save_rsi, 0, 0);
+            }
+         }
+     }
+  }
+}
 void
 generateASANRule(JanusContext *jc)
 {
@@ -498,6 +531,7 @@ generateASANRule(JanusContext *jc)
     //use liveness for rsi, rdi and rax around function calls
     if(jc->mode == JASAN_LIVE || jc->mode == JASAN_OPT){
         analyze_leaf_functions(jc);
+        analyze_call_sites(jc);
     }
 
     //add rules for canary value shadowing and poisoning
